@@ -181,8 +181,8 @@ class HabitRpgViewModel : ViewModel() {
     var gameState by mutableStateOf("intro") // "intro", "playing", "won", "lost"
     var playerX by mutableStateOf(50f)
     var playerY by mutableStateOf(75f)
-    val projectiles = mutableStateListOf<GameProjectile>()
-    val playerProjectiles = mutableStateListOf<GameProjectile>()
+    var projectiles by mutableStateOf<List<GameProjectile>>(emptyList())
+    var playerProjectiles by mutableStateOf<List<GameProjectile>>(emptyList())
     var gameLives by mutableStateOf(3)
     var bossHP by mutableStateOf(100)
     var bossMaxHP by mutableStateOf(100)
@@ -494,8 +494,8 @@ class HabitRpgViewModel : ViewModel() {
     fun launchArcadeGame(scope: CoroutineScope) {
         minigameActive = true
         gameState = "intro"
-        projectiles.clear()
-        playerProjectiles.clear()
+        projectiles = emptyList()
+        playerProjectiles = emptyList()
         gameLives = 3
     }
 
@@ -507,8 +507,8 @@ class HabitRpgViewModel : ViewModel() {
         gameLives = 3
         playerX = 50f
         playerY = 75f
-        projectiles.clear()
-        playerProjectiles.clear()
+        projectiles = emptyList()
+        playerProjectiles = emptyList()
 
         val spawnProb = 0.08f + (currentArenaIndex * 0.04f)
         val speedMin = 3f + (currentArenaIndex * 1f)
@@ -523,49 +523,47 @@ class HabitRpgViewModel : ViewModel() {
                 if (Random.nextFloat() < spawnProb) {
                     val dropX = Random.nextInt(10, 91).toFloat()
                     val speed = speedMin + Random.nextFloat() * (speedMax - speedMin)
-                    projectiles.add(GameProjectile(Math.random(), dropX, 0f, speed))
+                    projectiles = projectiles + GameProjectile(Math.random(), dropX, 0f, speed)
                 }
 
                 // Move Player Lasers Upward
-                val laserIterator = playerProjectiles.iterator()
-                while (laserIterator.hasNext()) {
-                    val p = laserIterator.next()
+                val currentLasers = playerProjectiles
+                val updatedLasers = ArrayList<GameProjectile>()
+                for (p in currentLasers) {
                     p.y -= 7f
-                    
                     // Collision with boss box (sit around Y=12f, width 40%)
                     if (p.y <= 16f && Math.abs(p.x - 50f) < 22f) {
                         bossHP = (bossHP - 10).coerceAtLeast(0)
-                        laserIterator.remove()
                         if (bossHP <= 0) {
                             gameState = "won"
                             break
                         }
-                    } else if (p.y < 0f) {
-                        laserIterator.remove()
+                    } else if (p.y >= 0f) {
+                        updatedLasers.add(p)
                     }
                 }
+                playerProjectiles = updatedLasers
 
                 // Move Enemy Projectiles Downward
                 if (gameState == "playing") {
-                    val bulletIterator = projectiles.iterator()
-                    while (bulletIterator.hasNext()) {
-                        val bullet = bulletIterator.next()
+                    val currentBullets = projectiles
+                    val updatedBullets = ArrayList<GameProjectile>()
+                    for (bullet in currentBullets) {
                         bullet.y += bullet.speed
-                        
                         // Collision check with Player
                         val distX = Math.abs(bullet.x - playerX)
                         val distY = Math.abs(bullet.y - playerY)
                         if (distX < 12f && distY < 8f) {
                             gameLives = (gameLives - 1).coerceAtLeast(0)
-                            bulletIterator.remove()
                             if (gameLives <= 0) {
                                 gameState = "lost"
                                 break
                             }
-                        } else if (bullet.y > 100f) {
-                            bulletIterator.remove()
+                        } else if (bullet.y <= 100f) {
+                            updatedBullets.add(bullet)
                         }
                     }
+                    projectiles = updatedBullets
                 }
             }
         }
@@ -573,7 +571,7 @@ class HabitRpgViewModel : ViewModel() {
 
     fun fireTacticalLaser() {
         if (gameState != "playing") return
-        playerProjectiles.add(GameProjectile(Math.random(), playerX, playerY - 4f, 8f))
+        playerProjectiles = playerProjectiles + GameProjectile(Math.random(), playerX, playerY - 4f, 8f)
     }
 
     fun claimArcadeVictoryRewards() {
