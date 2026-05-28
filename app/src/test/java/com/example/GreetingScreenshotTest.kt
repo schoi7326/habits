@@ -21,7 +21,12 @@ class GreetingScreenshotTest {
 
   @Test
   fun greeting_screenshot() {
-    // composeTestRule.setContent { MyApplicationTheme { Greeting("Robolectric") } }
-    // composeTestRule.onRoot().captureRoboImage(filePath = "src/test/screenshots/greeting.png")
+    val viewModel = HabitRpgViewModel()
+    composeTestRule.setContent {
+      MyApplicationTheme {
+        RpgAppContent(viewModel)
+      }
+    }
+    composeTestRule.onRoot().captureRoboImage(filePath = "src/test/screenshots/rpg_app.png")
   }
 }

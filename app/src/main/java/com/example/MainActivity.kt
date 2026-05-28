@@ -1278,6 +1278,18 @@ fun BottomNavBar(activeTab: String, onTabSelect: (String) -> Unit) {
 // --- HOME TAB SCREENS ---
 @Composable
 fun HomeTabScreen(viewModel: HabitRpgViewModel, scope: CoroutineScope) {
+    // Persistent Scanning Line Overlay inside Home tab view
+    val infiniteTransition = rememberInfiniteTransition(label = "scanning")
+    val scanY by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(4000, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "scanLine"
+    )
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -1501,18 +1513,6 @@ fun HomeTabScreen(viewModel: HabitRpgViewModel, scope: CoroutineScope) {
                     Spacer(modifier = Modifier.height(10.dp))
 
                     // Real Boss Stage Illustration and threat indicator
-                    // Animated Scanning Line Overlay
-                    val infiniteTransition = rememberInfiniteTransition(label = "scanning")
-                    val scanY by infiniteTransition.animateFloat(
-                        initialValue = 0f,
-                        targetValue = 1f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(4000, easing = LinearEasing),
-                            repeatMode = RepeatMode.Reverse
-                        ),
-                        label = "scanLine"
-                    )
-
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1554,7 +1554,9 @@ fun HomeTabScreen(viewModel: HabitRpgViewModel, scope: CoroutineScope) {
                                     colors = listOf(
                                         activeBoss.accentColor.copy(alpha = 0.25f),
                                         Color.Transparent
-                                    )
+                                    ),
+                                    startY = yOffset,
+                                    endY = yOffset + 15.dp.toPx()
                                 ),
                                 topLeft = Offset(0f, yOffset),
                                 size = Size(size.width, 15.dp.toPx())

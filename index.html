@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en" class="darkSec">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stitch RPG - Gamified Habit Trainer</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cyberDark: '#060E20',
+            cyberCard: '#131F33',
+            cyberField: '#1B2435',
+            neonGreen: '#6BFB9A',
+            neonPurple: '#E040FB',
+            neonOrange: '#FF9800',
+            borderGray: '#2D3449'
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Google Montserrat and JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: #060E20;
+    }
+    .mono-font {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* CRT Scanline Terminal Overlay effect */
+    .scanlines {
+      position: relative;
+      overflow: hidden;
+    }
+    .scanlines::before {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      z-index: 10;
+      background-size: 100% 4px, 6px 100%;
+      pointer-events: none;
+    }
+    /* Smooth custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #060E20;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2D3449;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #6BFB9A;
+    }
+  </style>
+</head>
+<body class="text-white min-h-screen flex flex-col antialiased scanlines">
+
+  <!-- ================= HEADER HUD LAYER ================= -->
+  <header class="bg-cyberCard bg-opacity-95 border-b border-borderGray sticky top-0 z-50 px-4 py-3 shadow-lg backdrop-blur-md">
+    <div class="max-w-md mx-auto flex flex-col space-y-2">
+      <!-- Title & Connection Hub -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <div class="p-1.5 bg-neonGreen bg-opacity-20 rounded-lg border border-neonGreen border-opacity-40 animate-pulse">
+            <i data-lucide="shield" class="w-5 h-5 text-neonGreen"></i>
+          </div>
+          <div>
+            <h1 class="text-sm font-black tracking-wider text-neonGreen mono-font uppercase flex items-center gap-1">
+              STITCH RPG <span class="text-[9px] bg-neonGreen/20 px-1 border border-neonGreen/30 rounded">v1.24</span>
+            </h1>
+            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest">HABIT & BIOMETRIC CHRONICLES</p>
+          </div>
+        </div>
+
+        <!-- Google Firebase Sign In / Interface Button -->
+        <button id="auth-btn" class="flex items-center space-x-1.5 px-2.5 py-1 bg-cyberField hover:bg-opacity-80 border border-borderGray rounded-lg text-[10px] uppercase font-bold tracking-wide transition-all duration-200">
+          <i data-lucide="log-in" class="w-3.5 h-3.5 text-neonGreen" id="auth-icon"></i>
+          <span id="auth-text">Sign In With Google</span>
+        </button>
+      </div>
+
+      <!-- Quick Session Banner Information -->
+      <div id="auth-banner" class="hidden bg-neonGreen/10 border border-neonGreen/20 p-2 rounded-lg text-xs flex justify-between items-center animate-fade-in">
+        <span class="flex items-center text-[10px] text-neonGreen">
+          <i data-lucide="user-check" class="w-4 h-4 mr-1"></i> Connected to Live Sync Cloud Engine
+        </span>
+        <button id="sync-now-btn" class="text-[8px] bg-cyberCard px-1.5 py-0.5 rounded border border-neonGreen hover:bg-neonGreen hover:text-black">Sync DB</button>
+      </div>
+
+      <!-- HUD Stats Grid -->
+      <div class="grid grid-cols-4 gap-2 bg-cyberField rounded-xl p-2.5 border border-borderGray">
+        <div class="text-center relative">
+          <p class="text-[8px] text-gray-400 font-bold uppercase tracking-wider">Level</p>
+          <p id="hud-level" class="text-base font-black text-white leading-5">124</p>
+          <p id="hud-trainer" class="text-[8px] text-neonGreen font-semibold tracking-tighter truncate px-1">TRAINER 124</p>
+        </div>
+        
+        <div class="text-center border-l border-borderGray/50 relative">
+          <p class="text-[8px] text-gray-400 font-bold uppercase tracking-wider">GP Balance</p>
+          <div class="flex items-center justify-center space-x-0.5">
+            <p id="hud-gp" class="text-base font-black text-neonOrange leading-5">1250</p>
+            <i data-lucide="coins" class="w-3.5 h-3.5 text-neonOrange"></i>
+          </div>
+          <p class="text-[8px] text-neonOrange/80 font-bold uppercase tracking-tighter">GOLD COINS</p>
+        </div>
+
+        <div class="text-center border-l border-borderGray/50 relative">
+          <p class="text-[8px] text-gray-400 font-bold uppercase tracking-wider">XP Balance</p>
+          <div class="flex items-center justify-center space-x-0.5">
+            <p id="hud-xp" class="text-base font-black text-neonPurple leading-5">3450</p>
+          </div>
+          <div class="w-full bg-cyberCard h-1 rounded-full overflow-hidden mt-0.5">
+            <div id="xp-progress-bar" class="bg-neonPurple h-full" style="width: 65%"></div>
+          </div>
+        </div>
+
+        <div class="text-center border-l border-borderGray/50 relative">
+          <p class="text-[8px] text-gray-400 font-bold uppercase tracking-wider">HP Vitality</p>
+          <div class="flex items-center justify-center space-x-0.5">
+            <p id="hud-hp" class="text-base font-black text-rose-500 leading-5">100/100</p>
+          </div>
+          <div class="w-full bg-cyberCard h-1 rounded-full overflow-hidden mt-0.5">
+            <div id="hp-progress-bar" class="bg-rose-500 h-full" style="width: 100%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Status Badges -->
+      <div class="flex justify-between items-center text-[9px] px-1 font-bold tracking-wide">
+        <span class="flex items-center text-neonGreen bg-neonGreen/10 px-1.5 py-0.5 rounded border border-neonGreen/20">
+          <i data-lucide="flame" class="w-3 h-3 mr-0.5"></i> STREAK: <span id="hud-streak" class="ml-0.5 font-extrabold text-white">4</span> DAYS
+        </span>
+        <span class="flex items-center text-neonPurple bg-neonPurple/10 px-1.5 py-0.5 rounded border border-neonPurple/20">
+          <i data-lucide="zap" class="w-3 h-3 mr-0.5"></i> MULTIPLIER: <span id="hud-multiplier" class="ml-0.5 font-extrabold text-white">1.2x</span>
+        </span>
+        <span class="flex items-center text-cyan-400 bg-cyan-400/10 px-1.5 py-0.5 rounded border border-cyan-400/20">
+          <i data-lucide="timer" class="w-3 h-3 mr-0.5"></i> FOCUS: <span id="hud-focus" class="ml-0.5 font-extrabold text-white">350s</span>
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= ACTIVE ALERTS DISPLAY ================= -->
+  <div id="alert-display" class="fixed top-28 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-sm px-4 hidden">
+    <div class="bg-red-950 border-2 border-red-500 rounded-xl p-3 flex shadow-xl items-start space-x-3 bg-opacity-95 backdrop-blur-md">
+      <div class="p-1 bg-red-500 text-white rounded">
+        <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+      </div>
+      <div class="flex-1">
+        <h4 class="text-[10px] font-black tracking-widest text-red-400 uppercase">SYSTEM ANOMALY</h4>
+        <p id="alert-text" class="text-xs font-semibold text-white leading-relaxed mt-1">Alert goes here.</p>
+      </div>
+      <button onclick="dismissAlert()" class="text-gray-400 hover:text-white">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- General Oracle Dialogue Popup -->
+  <div id="dialog-overlay" class="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-cyberCard border border-borderGray rounded-2xl w-full max-w-sm max-w-md p-4 space-y-4">
+      <div class="flex items-center space-x-2 text-neonGreen">
+        <i data-lucide="sparkles" class="w-5 h-5"></i>
+        <h3 class="text-xs font-bold tracking-widest uppercase mono-font">AI Oracle Verification Matrix</h3>
+      </div>
+      <p id="dialog-text" class="text-xs text-slate-300 leading-relaxed bg-cyberDark p-3 rounded-lg border border-borderGray">Analyzing postural alignments and neurological states...</p>
+      <div class="flex gap-2">
+        <button onclick="closeDialog()" class="flex-1 py-2 bg-neonGreen/20 text-neonGreen font-bold rounded-lg border border-neonGreen/40 text-xs uppercase tracking-wider hover:bg-neonGreen/30 transition">Acknowledge</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= CENTRAL SCROLL CONTENT LAYER ================= -->
+  <main class="flex-1 overflow-y-auto px-4 py-4 w-full">
+    <div id="active-tab-container" class="max-w-md mx-auto space-y-4 pb-20">
+
+      <!-- ================= SCREEN 1: HOME TAB ================= -->
+      <div id="tab-home" class="space-y-4">
+        
+        <!-- Posture Curvature Warning Alert Panel -->
+        <div id="posture-warning-banner" class="bg-red-950/80 border border-red-500/50 rounded-xl p-3 flex space-x-3 cursor-pointer hover:border-red-500 transition">
+          <div class="text-red-500 p-1">
+            <i data-lucide="heart" class="w-5 h-5 animate-bounce"></i>
+          </div>
+          <div>
+            <span class="text-[8px] bg-red-500/20 text-red-400 px-1 border border-red-500/30 rounded uppercase font-bold tracking-widest leading-none">POSTURAL THREAT ACTIVE</span>
+            <p class="text-[11px] font-semibold text-white leading-snug mt-1">
+              "AI Check Error: Lumbar spine angle curvature exceeded safe threshold! Active Threat boss penetrated defenses for penalty HP."
+            </p>
+          </div>
+        </div>
+
+        <!-- Boss HUD Progress Arena Card -->
+        <div class="bg-cyberCard border border-borderGray rounded-2xl p-4 flex flex-col relative overflow-hidden">
+          <div class="absolute right-0 top-0 opacity-15">
+            <i data-lucide="target" class="w-28 h-28 -mr-6 -mt-2"></i>
+          </div>
+          
+          <div class="flex justify-between items-center mb-2">
+            <div>
+              <span class="text-[8px] font-black text-neonGreen leading-none uppercase tracking-widest mono-font">ACTIVE ENEMY PROTOCOL</span>
+              <h2 id="home-boss-name" class="text-base font-black mt-1 tracking-tight">LAZER-EYED GODZILLA</h2>
+              <p id="home-boss-desc" class="text-[9px] text-gray-400 font-bold uppercase tracking-widest mono-font">CITY OF FOG AND DESTRUCTION</p>
+            </div>
+            <div id="home-boss-badge" class="px-2 py-0.5 bg-neonGreen/10 border border-neonGreen/30 text-neonGreen font-bold rounded text-[9px] uppercase tracking-wide">
+              LEVEL 1
+            </div>
+          </div>
+
+          <!-- Boss Health Bar -->
+          <div class="mt-2 text-xs flex justify-between font-bold text-gray-400 mb-1">
+            <span>Boss Shield Integrity</span>
+            <span id="home-boss-hp-text" class="text-neonGreen">42,000 / 50,000 HP</span>
+          </div>
+          <div class="w-full bg-cyberDark h-2 border border-borderGray rounded-full overflow-hidden mb-4">
+            <div id="home-boss-hp-bar" class="bg-neonGreen h-full transition-all duration-300" style="width: 84%"></div>
+          </div>
+
+          <!-- Boss Selection Buttons Navigator -->
+          <div class="grid grid-cols-2 gap-2 mt-2">
+            <button onclick="switchBossArena(-1)" class="py-2 bg-cyberField hover:bg-opacity-80 border border-borderGray rounded-xl text-[10px] uppercase font-bold tracking-wider flex items-center justify-center space-x-1">
+              <i data-lucide="arrow-left" class="w-3.5 h-3.5 mr-1"></i> Prev Boss Stage
+            </button>
+            <button onclick="switchBossArena(1)" class="py-2 bg-cyberField hover:bg-opacity-80 border border-borderGray rounded-xl text-[10px] uppercase font-bold tracking-wider flex items-center justify-center space-x-1">
+              <span>Next Boss Stage</span> <i data-lucide="arrow-right" class="w-3.5 h-3.5 ml-1"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Custom Game Quick Guide -->
+        <div class="bg-cyberCard border border-borderGray rounded-2xl p-4 flex items-start space-x-3">
+          <div class="p-2 bg-neonPurple/20 text-neonPurple border border-neonPurple/30 rounded-lg">
+            <i data-lucide="gamepad-2" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">Cyber Training Protocols</h3>
+            <p class="text-[10px] text-gray-400 leading-relaxed mt-1">
+              Complete daily quests or sustain focus intervals in the <span class="text-cyan-400">Sync Chamber</span> to chip away at the Boss HP. Switch to the <span class="text-neonPurple">Fitness Tab</span> to play the live interactive survival combat battle simulation directly.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- ================= SCREEN 2: QUESTS TAB ================= -->
+      <div id="tab-quests" class="space-y-4 hidden">
+        
+        <!-- Forge Quest (Create custom habits) -->
+        <div id="quest-forge-box" class="bg-cyberCard border border-borderGray rounded-2xl p-4 space-y-3">
+          <div class="flex justify-between items-center cursor-pointer" onclick="toggleQuestForgeForm()">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="hammer" class="w-5 h-5 text-neonGreen"></i>
+              <h2 class="text-sm font-black uppercase text-neonGreen">Create Quest Forge</h2>
+            </div>
+            <button id="forge-toggle-btn" class="text-xs font-extrabold bg-cyberField border border-borderGray text-gray-400 rounded px-2 py-0.5">FORGE SCREEN</button>
+          </div>
+
+          <!-- Expandable formulation logic -->
+          <div id="quest-forge-form" class="hidden space-y-3 pt-2 border-t border-borderGray">
+            <div class="space-y-1">
+              <label class="text-[9px] uppercase tracking-wider font-extrabold text-gray-400">Quest Title Name</label>
+              <input type="text" id="quest-title" placeholder="e.g. Meditate for 10M" class="w-full bg-cyberField border border-borderGray rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-neonGreen">
+            </div>
+            <div class="space-y-1">
+              <label class="text-[9px] uppercase tracking-wider font-extrabold text-gray-400">Quest Description Strategy</label>
+              <input type="text" id="quest-desc" placeholder="e.g. Center breathing parameters and align neural posture." class="w-full bg-cyberField border border-borderGray rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-neonGreen">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="space-y-1">
+                <label class="text-[9px] uppercase tracking-wider font-extrabold text-gray-400">XP Energy Gains</label>
+                <input type="number" id="quest-xp" value="150" class="w-full bg-cyberField border border-borderGray rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-neonGreen">
+              </div>
+              <div class="space-y-1">
+                <label class="text-[9px] uppercase tracking-wider font-extrabold text-gray-400">GP Gold Reward</label>
+                <input type="number" id="quest-gp" value="250" class="w-full bg-cyberField border border-borderGray rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-neonGreen">
+              </div>
+            </div>
+            <button onclick="forgeNewQuest()" class="w-full py-2 bg-neonGreen text-black font-extrabold text-xs rounded-xl uppercase tracking-widest shadow-md hover:bg-opacity-95 transition">Forge Habit Quest </button>
+          </div>
+        </div>
+
+        <!-- Quest List Checklist -->
+        <div class="bg-cyberCard border border-borderGray rounded-2xl p-4 space-y-3">
+          <div class="flex items-center space-x-2 pb-2 border-b border-borderGray/50">
+            <i data-lucide="check-square" class="w-5 h-5 text-neonPurple"></i>
+            <h2 class="text-sm font-black uppercase text-neonPurple">Daily Habit Objectives</h2>
+          </div>
+          
+          <!-- Loop checklist items -->
+          <div id="quest-list-box" class="space-y-3">
+            <!-- Dynamic items generated via Javascript -->
+          </div>
+        </div>
+
+        <!-- AI Double Verification Matrix -->
+        <div class="bg-cyberCard border border-borderGray rounded-2xl p-4 space-y-3">
+          <span class="text-[8px] font-black text-neonGreen uppercase tracking-widest mono-font block">DOUBLE VERIFICATION INTERFACES</span>
+          <h2 class="text-sm font-black text-white">AI VERIFICATION LABS</h2>
+          <p class="text-[10px] text-gray-400 leading-snug">Verify physical alignments and cognitive alignment journal files reactively.</p>
+
+          <!-- Computer Vision Flow Posture Camera Input Simulator -->
+          <div class="bg-cyberField border border-borderGray p-3 rounded-xl space-y-2">
+            <h4 class="text-[10px] font-bold text-white flex items-center gap-1">
+              <i data-lucide="eye" class="w-3.5 h-3.5 text-neonGreen"></i> AI Setup 1: Sitting Posture Alignment
+            </h4>
+            <p class="text-[9px] text-gray-400">Process spinal curvature measurements dynamically from camera alignment file.</p>
+            
+            <div class="flex space-x-2 mt-2">
+              <input type="file" id="posture-file-picker" accept="image/*" class="hidden" onchange="postureFileUploaded()">
+              <button onclick="triggerPosturePicker()" id="posture-load-btn" class="flex-1 py-1.5 bg-cyberCard border border-borderGray hover:bg-opacity-80 rounded-lg text-xs font-bold text-center">
+                Load Image File
+              </button>
+              <button onclick="runPostureAnalysis()" id="posture-analyze-btn" disabled class="flex-1 py-1.5 bg-gray-600 rounded-lg text-xs font-bold text-center text-white cursor-not-allowed">
+                Analyze Angle
+              </button>
+            </div>
+            <!-- Uploaded Image preview inside the matrix -->
+            <div id="posture-preview-area" class="hidden mt-2 bg-cyberCard p-2 border border-borderGray border-dashed rounded-lg text-center">
+              <p class="text-[8px] text-neonGreen mono-font font-bold mb-1">DETECTION SKELETON LOADED:</p>
+              <p id="posture-filename" class="text-[9px] text-slate-400 font-semibold truncate">skeletal_frame_optics.png</p>
+              <img id="posture-preview-image" src="" class="max-h-28 mx-auto mt-1 rounded border border-borderGray">
+            </div>
+          </div>
+
+          <!-- NLP Flow Cognition Journal Statement Module -->
+          <div class="bg-cyberField border border-borderGray p-3 rounded-xl space-y-2">
+            <h4 class="text-[10px] font-bold text-white flex items-center gap-1">
+              <i data-lucide="file-text" class="w-3.5 h-3.5 text-neonPurple"></i> AI Setup 2: NLP Cognitive Journal Statement
+            </h4>
+            <p class="text-[9px] text-gray-400">Scan psychological metrics from cognitive focus statement journals.</p>
+            <textarea id="mood-diary-text" rows="2" placeholder="Describe your focus alignment, obstacles faced, or mental resilience strategy today..." class="w-full bg-cyberCard border border-borderGray rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-neonPurple"></textarea>
+            <button onclick="runCognitiveNLPAnalysis()" class="w-full py-1.5 bg-neonPurple text-white rounded-lg text-xs font-bold border border-neonPurple/40">
+              Verify Alignment
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- ================= SCREEN 3: FITNESS TAB ================= -->
+      <div id="tab-fitness" class="space-y-4 hidden">
+        
+        <!-- Physiological Sync Chamber -->
+        <div class="bg-cyberCard border border-borderGray rounded-2xl p-4 space-y-3">
+          <div class="flex justify-between items-center">
+            <div>
+              <span class="text-[8px] font-black text-neonPurple uppercase tracking-widest mono-font block">PHYSIOLOGICAL CHAMBER ACTIVE</span>
+              <h2 id="fitness-status-h" class="text-sm font-black uppercase text-white">📴 STANDBY PROTOCOLS</h2>
+            </div>
+            <i data-lucide="activity" class="w-6 h-6 text-neonPurple animate-pulse"></i>
+          </div>
+
+          <!-- Focus Arena illustration and core targets decoration -->
+          <div id="sync-hud-frame" class="h-32 rounded-xl border border-neonGreen/40 bg-cyberDark flex flex-col justify-center items-center relative overflow-hidden transition-all duration-300">
+            <!-- Custom Corner crosshairs -->
+            <div class="absolute top-2 left-2 w-3 h-3 border-t border-l border-neonGreen"></div>
+            <div class="absolute top-2 right-2 w-3 h-3 border-t border-r border-neonGreen"></div>
+            <div class="absolute bottom-2 left-2 w-3 h-3 border-b border-l border-neonGreen"></div>
+            <div class="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-neonGreen"></div>
+
+            <p class="text-[8px] text-neonGreen tracking-widest font-black uppercase mono-font">TARGET SYNCHRONIZED VECTOR</p>
+            <p id="fitness-boss-name" class="text-base font-black text-white mt-1">LAZER-EYED GODZILLA</p>
+            <p id="fitness-boss-landscape" class="text-[8px] text-slate-400 font-semibold tracking-wider mono-font uppercase">CITY OF FOG AND DESTRUCTION</p>
+          </div>
+
+          <!-- Pomodoro Counter Sync Engine -->
+          <div class="bg-cyberField border border-borderGray p-3 rounded-xl space-y-2 text-center">
+            <span class="text-[8px] font-black tracking-widest text-[#DDB7FF] uppercase">INTERVAL SYNCRONIZER RIG</span>
+            <div class="flex items-center justify-center space-x-3 my-1">
+              <button onclick="changePomoMode('focus')" class="px-2.5 py-1 bg-cyberCard border border-neonPurple text-neonPurple hover:bg-neonPurple hover:text-black rounded text-[9px] uppercase font-black transition">Focus Task</button>
+              <div id="pomo-timer-ticker" class="text-2xl font-black text-white leading-none tracking-tight">25:00</div>
+              <button onclick="changePomoMode('rest')" class="px-2.5 py-1 bg-cyberCard border border-borderGray text-gray-400 hover:text-white hover:border-gray-400 rounded text-[9px] uppercase font-black transition">Rest Space</button>
+            </div>
+            
+            <button onclick="togglePomodoroTicker()" id="pomo-control-btn" class="w-full py-1.5 bg-neonPurple text-white rounded-lg text-xs font-bold uppercase tracking-wider">
+              Start Focus Session
+            </button>
+          </div>
+
+          <!-- Live Biometric Workout Scanner Trigger -->
+          <div class="bg-cyberField border border-borderGray p-3 rounded-xl space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-[8px] font-black tracking-widest text-emerald-400 uppercase">BIOMETRIC SIMULATION SCANNER</span>
+              <span id="biometric-tag" class="text-[8px] bg-slate-800 text-slate-400 px-1 border border-slate-700 font-bold rounded uppercase">OFFLINE</span>
+            </div>
+            <p class="text-[9px] text-gray-400 leading-snug">Attach sensory trackers and align full-body exercise inputs dynamically.</p>
+            
+            <!-- Real-time workout metrics displays -->
+            <div class="grid grid-cols-2 gap-2 mt-2">
+              <div class="bg-cyberCard border border-borderGray p-2 rounded-lg text-center">
+                <p class="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest leading-none">HEART RATE</p>
+                <div class="flex justify-center items-center gap-1 mt-1">
+                  <span id="workout-pulse" class="text-sm font-black text-rose-500">--</span>
+                  <p class="text-[8px] text-rose-500/80 font-bold uppercase">BPM</p>
+                </div>
+              </div>
+              <div class="bg-cyberCard border border-borderGray p-2 rounded-lg text-center">
+                <p class="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest leading-none">ENERGY WATTS</p>
+                <div class="flex justify-center items-center gap-1 mt-1">
+                  <span id="workout-watts" class="text-sm font-black text-cyan-400">--</span>
+                  <p class="text-[8px] text-cyan-400/80 font-bold uppercase">WATTS</p>
+                </div>
+              </div>
+            </div>
+
+            <button onclick="toggleFitnessWorkout()" id="fitness-workout-btn" class="w-full py-1.5 bg-[#00E676] text-black font-extrabold text-xs rounded-lg uppercase tracking-wider mt-1">
+              Initialize Biometric Scanning
+            </button>
+          </div>
+        </div>
+
+        <!-- 2D Arcade Battle Box Minigame -->
+        <div class="bg-cyberCard border border-borderGray rounded-2xl p-4 space-y-3">
+          <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="gamepad-2" class="w-5 h-5 text-neonGreen"></i>
+              <h2 class="text-sm font-black uppercase text-neonGreen">ACTIVE COMBAT SIMULATION</h2>
+            </div>
+            <div class="flex items-center space-x-1 font-bold text-[9px] tracking-wide text-rose-500">
+              <i data-lucide="heart" class="w-3 h-3 fill-rose-500"></i> LIVES: <span id="game-lives-count" class="text-white text-xs">3</span>
+            </div>
+          </div>
+          
+          <p class="text-[10px] text-gray-400 leading-snug">
+            Control combat spacecraft defensively! Deal dynamic laser damage to the falling threats using interactive sliders or touch/mouse controls!
+          </p>
+
+          <!-- 2D Canvas Battleground Arena Frame -->
+          <div class="relative bg-black rounded-xl border border-borderGray overflow-hidden w-full" style="height: 250px;">
+            <canvas id="game-canvas" width="400" height="250" class="w-full h-full block"></canvas>
+            
+            <!-- Intro layer Overlay -->
+            <div id="game-intro-screen" class="absolute inset-0 bg-black/85 flex flex-col items-center justify-center text-center p-4">
+              <i data-lucide="swords" class="w-10 h-10 text-neonGreen mb-2 animate-bounce"></i>
+              <h3 id="arcade-boss-title" class="text-xs font-black tracking-widest text-[#DDB7FF] uppercase">CHALLENGE BOSS ENEMY!</h3>
+              <p class="text-[9px] text-slate-400 max-w-xs mt-1">Dodge physical cosmic threats and fire custom thermal laser barrages at bosses!</p>
+              <button onclick="startGameSimulation()" class="mt-3 px-4 py-1.5 bg-neonGreen text-black font-black text-[10px] uppercase rounded-lg border border-neonGreen shadow-md hover:bg-opacity-95 transition">Initialize Arcade Battle</button>
+            </div>
+
+            <!-- Won Game Screen Layer -->
+            <div id="game-won-screen" class="absolute inset-0 bg-black/85 flex flex-col items-center justify-center text-center p-4 hidden">
+              <i data-lucide="trophy" class="w-12 h-12 text-[#FF9800] mb-2"></i>
+              <h3 class="text-sm font-black tracking-widest text-neonGreen uppercase">CYBER VICTORY! SUCCESS</h3>
+              <p class="text-[12px] text-slate-300 max-w-xs mt-1">Defeated boss threat. Earned 450 XP, 600 Gold Coins and custom item materials!</p>
+              <button onclick="resetGameSimulation()" class="mt-3 px-4 py-1.5 bg-neonGreen text-black font-black text-[10px] uppercase rounded-lg">Return to Battlegrounds</button>
+            </div>
+
+            <!-- Lost Game Screen Layer -->
+            <div id="game-lost-screen" class="absolute inset-0 bg-black/85 flex flex-col items-center justify-center text-center p-4 hidden">
+              <i data-lucide="skull" class="w-12 h-12 text-rose-500 mb-2"></i>
+              <h3 class="text-sm font-black tracking-widest text-rose-400 uppercase font-extrabold">DEFENSES PENETRATED</h3>
+              <p class="text-[12px] text-slate-300 max-w-xs mt-1">Lives completely zeroed from hostile laser barrages. Rest HP decreased.</p>
+              <button onclick="resetGameSimulation()" class="mt-3 px-4 py-1.5 bg-rose-500 text-white font-black text-[10px] uppercase rounded-lg">Retry Simulation</button>
+            </div>
+          </div>
+
+          <!-- Canvas Interactive controls slider bar -->
+          <div class="space-y-2 mt-2 bg-cyberField p-2 rounded-xl">
+            <div class="flex justify-between items-center text-[9px] text-gray-400 font-bold uppercase tracking-wider">
+              <span>🚀 NAVIGATION SLIDER</span>
+              <span>🔥 LASERS BURST FREQUENT</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button onclick="movePlayerLeft()" class="p-2 bg-cyberCard border border-borderGray rounded-lg hover:border-neonGreen">
+                <i data-lucide="arrow-left" class="w-4 h-4 text-white"></i>
+              </button>
+              <input type="range" id="player-slider" min="5" max="95" value="50" oninput="sliderPlayerInput(this.value)" class="flex-1 accent-neonGreen bg-cyberCard h-2 rounded-lg cursor-pointer">
+              <button onclick="movePlayerRight()" class="p-2 bg-cyberCard border border-borderGray rounded-lg hover:border-neonGreen">
+                <i data-lucide="arrow-right" class="w-4 h-4 text-white"></i>
+              </button>
+              <button onclick="fireLaserProjectile()" class="px-3 py-2 bg-neonGreen text-black font-black text-[10px] uppercase rounded-lg">
+                FIRE
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- ================= SCREEN 4: ANALYTICS TAB ================= -->
+      <div id="tab-analytics" class="space-y-4 hidden">
+        
+        <!-- Metrics distribution analyzer components -->
+        <div class="bg-cyberCard border border-borderGray rounded-2xl p-4 space-y-3">
+          <div class="flex items-center space-x-2 pb-2 border-b border-borderGray/50">
+            <i data-lucide="pie-chart" class="w-5 h-5 text-neonGreen"></i>
+            <h2 class="text-sm font-black uppercase text-neonGreen">Metrics Distribution Ledger</h2>
+          </div>
+          
+          <p class="text-[10px] text-gray-400 leading-snug">Track physical habit accomplishments classified elegantly across dynamic functional quadrants.</p>
+
+          <!-- Quadrant Meters -->
+          <div id="analytics-bars-container" class="space-y-3 pt-1">
+            <!-- Render bars matching category values -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-[10px] font-bold">
+                <span class="text-white">Health Parameters Accomplish</span>
+                <span id="cat-health-val" class="text-neonGreen">14 completed</span>
+              </div>
+              <div class="w-full bg-cyberField h-2 rounded-full overflow-hidden border border-borderGray">
+                <div id="cat-health-bar" class="h-full bg-neonGreen" style="width: 55%"></div>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <div class="flex justify-between text-[10px] font-bold">
+                <span class="text-white">Mindfulness Cognitive Alignment</span>
+                <span id="cat-mind-val" class="text-rose-400">9 completed</span>
+              </div>
+              <div class="w-full bg-cyberField h-2 rounded-full overflow-hidden border border-borderGray">
+                <div id="cat-mind-bar" class="h-full bg-rose-400" style="width: 40%"></div>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <div class="flex justify-between text-[10px] font-bold">
+                <span class="text-white">Skill Matrix Evolution</span>
+                <span id="cat-skills-val" class="text-cyan-400">11 completed</span>
+              </div>
+              <div class="w-full bg-cyberField h-2 rounded-full overflow-hidden border border-borderGray">
+                <div id="cat-skills-bar" class="h-full bg-cyan-400" style="width: 48%"></div>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <div class="flex justify-between text-[10px] font-bold">
+                <span class="text-white">School & Career Progression</span>
+                <span id="cat-school-val" class="text-[#FF9800]">18 completed</span>
+              </div>
+              <div class="w-full bg-cyberField h-2 rounded-full overflow-hidden border border-borderGray">
+                <div id="cat-school-bar" class="h-full bg-neonOrange" style="width: 72%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly summary telemetry panel -->
+        <div class="bg-cyberCard border border-borderGray rounded-2xl p-4 space-y-2">
+          <span class="text-[8px] font-bold tracking-widest text-[#DDB7FF] uppercase uppercase">TELEMETRY DIAGNOSTICS</span>
+          <h3 class="text-xs font-black text-white">CHRONO COMPLETENESS CHART</h3>
+          <p class="text-[10px] text-gray-400 leading-snug mb-2">Overall habit efficiency performance matrix score computes to 84.5% overall stability.</p>
+          
+          <div class="grid grid-cols-7 gap-1 bg-cyberField p-2 border border-borderGray rounded-xl text-center">
+            <div>
+              <p class="text-[8px] text-gray-400 font-bold">MON</p>
+              <div class="w-full bg-cyberDark h-12 rounded mt-1 overflow-hidden relative flex items-end">
+                <div class="w-full bg-neonGreen" style="height: 80%"></div>
+              </div>
+            </div>
+            <div>
+              <p class="text-[8px] text-gray-400 font-bold">TUE</p>
+              <div class="w-full bg-cyberDark h-12 rounded mt-1 overflow-hidden relative flex items-end">
+                <div class="w-full bg-neonGreen" style="height: 60%"></div>
+              </div>
+            </div>
+            <div>
+              <p class="text-[8px] text-gray-400 font-bold">WED</p>
+              <div class="w-full bg-cyberDark h-12 rounded mt-1 overflow-hidden relative flex items-end">
+                <div class="w-full bg-neonGreen" style="height: 95%"></div>
+              </div>
+            </div>
+            <div>
+              <p class="text-[8px] text-gray-400 font-bold">THU</p>
+              <div class="w-full bg-cyberDark h-12 rounded mt-1 overflow-hidden relative flex items-end">
+                <div class="w-full bg-neonGreen" style="height: 40%"></div>
+              </div>
+            </div>
+            <div>
+              <p class="text-[8px] text-gray-400 font-bold">FRI</p>
+              <div class="w-full bg-cyberDark h-12 rounded mt-1 overflow-hidden relative flex items-end">
+                <div class="w-full bg-neonGreen" style="height: 75%"></div>
+              </div>
+            </div>
+            <div>
+              <p class="text-[8px] text-gray-400 font-bold">SAT</p>
+              <div class="w-full bg-cyberDark h-12 rounded mt-1 overflow-hidden relative flex items-end">
+                <div class="w-full bg-[#E040FB]" style="height: 90%"></div>
+              </div>
+            </div>
+            <div>
+              <p class="text-[8px] text-gray-400 font-bold">SUN</p>
+              <div class="w-full bg-cyberDark h-12 rounded mt-1 overflow-hidden relative flex items-end">
+                <div class="w-full bg-[#E040FB]" style="height: 85%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- ================= SCREEN 5: SHOP TAB ================= -->
+      <div id="tab-shop" class="space-y-4 hidden">
+        
+        <!-- Shop Room filtering constraints -->
+        <div class="flex space-x-2 overflow-x-auto py-1">
+          <button onclick="shopFilterItems('CONSUMABLE')" id="shop-btn-consumable" class="px-3 py-1 bg-neonGreen text-black font-extrabold rounded-lg text-[10px] uppercase border border-neonGreen shadow-md">Consumables</button>
+          <button onclick="shopFilterItems('GEAR')" id="shop-btn-gear" class="px-3 py-1 bg-cyberCard border border-borderGray text-gray-400 rounded-lg text-[10px] uppercase font-bold">Tactical Gear</button>
+          <button onclick="shopFilterItems('SPECIAL')" id="shop-btn-special" class="px-3 py-1 bg-cyberCard border border-borderGray text-gray-400 rounded-lg text-[10px] uppercase font-bold">Special Items</button>
+        </div>
+
+        <!-- Shop Catalog -->
+        <div class="bg-cyberCard border border-borderGray rounded-2xl p-4 space-y-3">
+          <div class="flex items-center space-x-2 pb-2 border-b border-borderGray/50">
+            <i data-lucide="shopping-bag" class="w-5 h-5 text-neonOrange"></i>
+            <h2 class="text-sm font-black uppercase text-neonOrange">Cyber Armoury Shop Room</h2>
+          </div>
+
+          <!-- Items space -->
+          <div id="shop-items-box" class="space-y-3">
+            <!-- Generated items go here -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ================= FOOTER PERSISTENT TABS ================= -->
+  <nav class="bg-cyberCard border-t border-borderGray fixed bottom-0 left-0 right-0 z-50 py-2 shadow-xl backdrop-blur-md">
+    <div class="max-w-md mx-auto flex justify-around">
+      <button onclick="switchTab('home')" id="nav-btn-home" class="flex flex-col items-center space-y-0.5 text-neonGreen font-semibold">
+        <i data-lucide="home" class="w-5 h-5"></i>
+        <span class="text-[9px] uppercase tracking-wide">Status HUD</span>
+      </button>
+
+      <button onclick="switchTab('quests')" id="nav-btn-quests" class="flex flex-col items-center space-y-0.5 text-gray-400 hover:text-white">
+        <i data-lucide="check-square" class="w-5 h-5"></i>
+        <span class="text-[9px] uppercase tracking-wide">Quests</span>
+      </button>
+
+      <button onclick="switchTab('fitness')" id="nav-btn-fitness" class="flex flex-col items-center space-y-0.5 text-gray-400 hover:text-white">
+        <i data-lucide="dumbbell" class="w-5 h-5"></i>
+        <span class="text-[9px] uppercase tracking-wide">Fitness</span>
+      </button>
+
+      <button onclick="switchTab('analytics')" id="nav-btn-analytics" class="flex flex-col items-center space-y-0.5 text-gray-400 hover:text-white">
+        <i data-lucide="line-chart" class="w-5 h-5"></i>
+        <span class="text-[9px] uppercase tracking-wide">Analysis</span>
+      </button>
+
+      <button onclick="switchTab('shop')" id="nav-btn-shop" class="flex flex-col items-center space-y-0.5 text-gray-400 hover:text-white">
+        <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+        <span class="text-[9px] uppercase tracking-wide">Shop</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ================= FIREBASE WEB CDN SETUP & APPLICATION ENGINE ================= -->
+  <script type="module">
+    // CDN Module imports standard components of Firebase Web Core SDK v10.0.0
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js";
+
+    // Hardcoded Firebase integration rules configuration slot
+    const firebaseConfig = {
+      apiKey: "[PASTE_YOUR_VITE_FIREBASE_API_KEY_HERE]",
+      authDomain: "[PASTE_YOUR_VITE_FIREBASE_AUTH_DOMAIN_HERE]",
+      projectId: "[PASTE_YOUR_VITE_FIREBASE_PROJECT_ID_HERE]",
+      storageBucket: "[PASTE_YOUR_VITE_FIREBASE_STORAGE_BUCKET_HERE]",
+      messagingSenderId: "[PASTE_YOUR_VITE_FIREBASE_MESSAGING_SENDER_ID_HERE]",
+      appId: "[PASTE_YOUR_VITE_FIREBASE_APP_ID_HERE]",
+      databaseId: "[PASTE_YOUR_VITE_FIREBASE_FIRESTORE_DATABASE_ID_HERE]"
+    };
+
+    // Global App variables holding states initialized similarly to the MainActivity’s values
+    window.appState = {
+      trainerName: "TRAINER 124",
+      trainerLevel: 124,
+      gpBalance: 1250,
+      xpBalance: 3450,
+      playerHP: 100,
+      streakCount: 4,
+      xpMultiplier: 1.2,
+      totalFocusSeconds: 350,
+
+      maxUnlockedIndex: 0,
+      currentArenaIndex: 0,
+
+      // Live lists
+      quests: [
+        { id: 1, type: "EASY", title: "Hydration Ritual", description: "Consume 2.5L of water to optimize core parameters.", xp: 50, gp: 100, completed: false },
+        { id: 2, type: "MEDIUM", title: "Cardio Burnout", description: "Achieve 20 minutes sustained heart rate above 140 BPM.", xp: 150, gp: 300, completed: false },
+        { id: 3, type: "HARD", title: "Iron Core Protocol", description: "Complete 5 sets of heavy compound lifts.", xp: 400, gp: 850, completed: false },
+        { id: 4, type: "DONE", title: "Sleep Cycle Sync", description: "Achieve 8 hours of restorative daily sleep.", xp: 200, gp: 150, completed: true }
+      ],
+
+      shopItems: [
+        { id: 1, name: "HP Medic Pack", desc: "Instantly restores 35 HP. Grants temporary ATK boosts.", cost: 150, quantity: 1, type: "CONSUMABLE", color: "#00E676" },
+        { id: 2, name: "M4A4 Assault Rifle", desc: "Tactical weapon yielding energy discharge advantages.", cost: 450, quantity: 0, type: "GEAR", color: "#FFD9C1" },
+        { id: 3, name: "XP Crystal Container", desc: "Crystalline container with potent training energy boost.", cost: 300, quantity: 0, type: "SPECIAL", color: "#DDB7FF" },
+        { id: 4, name: "Real Life Break Coupon", desc: "Take a cozy 15-minute screen-free rest.", cost: 200, quantity: 0, type: "CONSUMABLE", color: "#FFFFB74D" }
+      ],
+
+      arenas: [
+        { levelName: "LEVEL 1", enemyName: "LAZER-EYED GODZILLA", backgroundName: "CITY OF FOG AND DESTRUCTION", maxHP: 50000, currentHP: 42000, colorTheme: "#0F1B3E", colorAccent: "#6BFB9A" },
+        { levelName: "LEVEL 2", enemyName: "ROCK-HARD GORILLA", backgroundName: "MOUNTAINS OF LAVA", maxHP: 80000, currentHP: 74200, colorTheme: "#381212", colorAccent: "#FF9800" },
+        { levelName: "LEVEL 3", enemyName: "FLAME-MOUTH LIZARD DRAGON", backgroundName: "FOREST TEMPLE OF THE LIZARDS", maxHP: 120000, currentHP: 110000, colorTheme: "#11381E", colorAccent: "#00E676" },
+        { levelName: "BOSS LEVEL", enemyName: "SHARP-CLAWED ARMOURED BEAR", backgroundName: "CELEBRATION - CHAMPION ARENA", maxHP: 200000, currentHP: 185000, colorTheme: "#26123E", colorAccent: "#E040FB" }
+      ],
+
+      activeTab: "home",
+      currentShopFilter: "CONSUMABLE",
+
+      // Timers & Workout Rig Active States
+      pomoActive: false,
+      pomoMode: "focus",
+      pomoSecondsLeft: 25 * 60,
+      pomoIntervalId: null,
+
+      fitnessActive: false,
+      fitnessSeconds: 0,
+      fitnessIntervalId: null,
+
+      // Authentication binding states
+      user: null
+    };
+
+    // Firebase instance handles configurations
+    let app, db, auth, provider;
+    
+    // Check if the firebase credentials are realistic or placeholders
+    const isValidKey = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("PASTE_YOUR_VITE_FIREBASE_API_KEY");
+    
+    if (isValidKey) {
+      try {
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        provider = new GoogleAuthProvider();
+        console.log("Firebase CDN Online Successfully bound with key parameter metrics");
+      } catch (err) {
+        console.error("Firebase setup error:", err);
+      }
+    } else {
+      console.warn("Utilizing Local Simulated Storage Sandbox. Populate Web FirebaseConfig object inside script to enable cloud persistence synchronization.");
+    }
+
+    // ================= MOUNT INTERACTIVE APP TRIGGERS =================
+    window.addEventListener("load", () => {
+      // Connect Auth listener
+      if (auth) {
+        onAuthStateChanged(auth, (firebaseUser) => {
+          if (firebaseUser) {
+            window.appState.user = firebaseUser;
+            window.appState.trainerName = firebaseUser.displayName || "TRAINER CLOUD";
+            document.getElementById("auth-text").innerText = "Sign Out";
+            document.getElementById("auth-icon").setAttribute("data-lucide", "log-out");
+            document.getElementById("auth-banner").classList.remove("hidden");
+            
+            // Fast loading cloud snapshot
+            const docRef = doc(db, "stitch_rpg_users", firebaseUser.uid);
+            onSnapshot(docRef, (docSnap) => {
+              if (docSnap.exists()) {
+                const cloudData = docSnap.data();
+                Object.assign(window.appState, cloudData);
+                syncUiHUD();
+                renderQuests();
+                renderShopCatalog();
+              }
+            });
+          } else {
+            window.appState.user = null;
+            document.getElementById("auth-text").innerText = "Sign In With Google";
+            document.getElementById("auth-icon").setAttribute("data-lucide", "log-in");
+            document.getElementById("auth-banner").classList.add("hidden");
+          }
+          lucide.createIcons();
+        });
+      }
+
+      // Initialize defaults rendering on-screen elements
+      syncUiHUD();
+      renderQuests();
+      renderShopCatalog();
+      updateGameArenaHUD();
+      lucide.createIcons();
+    });
+
+    // Sign In Trigger bulletproof event listener
+    document.getElementById("auth-btn").addEventListener("click", () => {
+      if (window.appState.user) {
+        if (auth) {
+          signOut(auth).then(() => {
+            window.appState.user = null;
+            window.appState.trainerName = "TRAINER 124";
+            syncUiHUD();
+            triggerAppAlert("Signed out of Google Synced Database parameters.");
+          });
+        } else {
+          window.appState.user = null;
+          syncUiHUD();
+        }
+      } else {
+        if (auth) {
+          signInWithPopup(auth, provider).then((result) => {
+            triggerAppAlert(`Welcome online: ${result.user.displayName}! Metrics syncing active.`);
+          }).catch((err) => {
+            triggerAppAlert(`Google Connection Failed fallback: ${err.message}`);
+          });
+        } else {
+          // Fallback simulation mode
+          window.appState.user = { uid: "sim_124" };
+          window.appState.trainerName = "SIM ULATOR";
+          document.getElementById("auth-text").innerText = "Sign Out (Sim)";
+          document.getElementById("auth-banner").classList.remove("hidden");
+          triggerAppAlert("Simulator mode activated successfully! No credentials found.");
+          syncUiHUD();
+        }
+      }
+    });
+
+    // Manual cloud push synchronize trigger
+    document.getElementById("sync-now-btn").addEventListener("click", () => {
+      if (db && window.appState.user) {
+        const payload = {
+          trainerName: window.appState.trainerName,
+          trainerLevel: window.appState.trainerLevel,
+          gpBalance: window.appState.gpBalance,
+          xpBalance: window.appState.xpBalance,
+          playerHP: window.appState.playerHP,
+          streakCount: window.appState.streakCount,
+          xpMultiplier: window.appState.xpMultiplier,
+          totalFocusSeconds: window.appState.totalFocusSeconds,
+          maxUnlockedIndex: window.appState.maxUnlockedIndex,
+          currentArenaIndex: window.appState.currentArenaIndex,
+          quests: window.appState.quests
+        };
+        setDoc(doc(db, "stitch_rpg_users", window.appState.user.uid), payload)
+          .then(() => triggerAppAlert("Cloud metrics saved successfully! Database current."))
+          .catch(e => triggerAppAlert(`Sync fail error: ${e.message}`));
+      } else {
+        triggerAppAlert("Live Database sync is inactive. Connected browser session needed.");
+      }
+    });
+
+    // Handle Active Alert system trigger toast
+    function triggerAppAlert(message) {
+      const alertDiv = document.getElementById("alert-display");
+      const alertTxt = document.getElementById("alert-text");
+      alertTxt.innerText = message;
+      alertDiv.classList.remove("hidden");
+      setTimeout(() => {
+        alertDiv.classList.add("hidden");
+      }, 5500);
+    }
+    window.triggerAppAlert = triggerAppAlert;
+
+    function dismissAlert() {
+      document.getElementById("alert-display").classList.add("hidden");
+    }
+    window.dismissAlert = dismissAlert;
+
+    // Oracle Global Dialog popups handler
+    function showOracleDialog(msg) {
+      document.getElementById("dialog-text").innerText = msg;
+      document.getElementById("dialog-overlay").classList.remove("hidden");
+    }
+    window.showOracleDialog = showOracleDialog;
+
+    function closeDialog() {
+      document.getElementById("dialog-overlay").classList.add("hidden");
+    }
+    window.closeDialog = closeDialog;
+
+    // HUD Synchronization values wrapper
+    function syncUiHUD() {
+      document.getElementById("hud-level").innerText = window.appState.trainerLevel;
+      document.getElementById("hud-trainer").innerText = window.appState.trainerName;
+      document.getElementById("hud-gp").innerText = window.appState.gpBalance;
+      document.getElementById("hud-xp").innerText = window.appState.xpBalance;
+      document.getElementById("hud-hp").innerText = `${window.appState.playerHP}/100`;
+      document.getElementById("hud-streak").innerText = window.appState.streakCount;
+      document.getElementById("hud-multiplier").innerText = `${window.appState.xpMultiplier}x`;
+      document.getElementById("hud-focus").innerText = `${window.appState.totalFocusSeconds}s`;
+
+      // Progress bars values calculations ratio
+      const hpPercentage = Math.max(0, Math.min(100, window.appState.playerHP));
+      const xpPercentage = Math.max(0, Math.min(100, (window.appState.xpBalance % 1000) / 10)); // simulated 1000 XP level thresholds
+      
+      document.getElementById("hp-progress-bar").style.width = `${hpPercentage}%`;
+      document.getElementById("xp-progress-bar").style.width = `${xpPercentage}%`;
+    }
+    window.syncUiHUD = syncUiHUD;
+
+    // Tab Interface navigations
+    function switchTab(tabId) {
+      // Toggle CSS grids hide
+      ["home", "quests", "fitness", "analytics", "shop"].forEach(availTab => {
+        const el = document.getElementById(`tab-${availTab}`);
+        const btn = document.getElementById(`nav-btn-${availTab}`);
+        if (availTab === tabId) {
+          el.classList.remove("hidden");
+          btn.classList.add("text-neonGreen", "font-semibold");
+          btn.classList.remove("text-gray-400");
+        } else {
+          el.classList.add("hidden");
+          btn.classList.remove("text-neonGreen", "font-semibold");
+          btn.classList.add("text-gray-400");
+        }
+      });
+      window.appState.activeTab = tabId;
+      
+      if (tabId === "fitness") {
+        updateGameArenaHUD();
+        // Trigger Canvas initialization inside the tab dynamically
+        initCanvasGame();
+      }
+      lucide.createIcons();
+    }
+    window.switchTab = switchTab;
+
+    // ================= BOSS NAVIGATORS PROTOCOLS =================
+    function switchBossArena(direction) {
+      let nextIndex = window.appState.currentArenaIndex + direction;
+      if (nextIndex < 0) nextIndex = window.appState.arenas.size - 1;
+      nextIndex = nextIndex % window.appState.arenas.length;
+      
+      window.appState.currentArenaIndex = nextIndex;
+      updateGameArenaHUD();
+    }
+    window.switchBossArena = switchBossArena;
+
+    function updateGameArenaHUD() {
+      const activeBoss = window.appState.arenas[window.appState.currentArenaIndex];
+      
+      // Update screens widgets elements
+      document.getElementById("home-boss-name").innerText = activeBoss.enemyName;
+      document.getElementById("home-boss-desc").innerText = activeBoss.backgroundName;
+      document.getElementById("home-boss-badge").innerText = activeBoss.levelName;
+      document.getElementById("home-boss-hp-text").innerText = `${activeBoss.currentHP.toLocaleString()} / ${activeBoss.maxHP.toLocaleString()} HP`;
+      
+      const widthPercent = (activeBoss.currentHP / activeBoss.maxHP) * 100;
+      document.getElementById("home-boss-hp-bar").style.width = `${widthPercent}%`;
+
+      // Match Fitness Tab HUD
+      document.getElementById("fitness-boss-name").innerText = activeBoss.enemyName;
+      document.getElementById("fitness-boss-landscape").innerText = activeBoss.backgroundName;
+
+      // Render aesthetic border accents
+      const syncChamberFrame = document.getElementById("sync-hud-frame");
+      syncChamberFrame.style.backgroundColor = activeBoss.colorTheme;
+      syncChamberFrame.style.borderColor = activeBoss.colorAccent + "66"; // opacity factor
+    }
+
+    // ================= EXCEL DAILY HABITS MATRIX QUESTS =================
+    function renderQuests() {
+      const parent = document.getElementById("quest-list-box");
+      parent.innerHTML = "";
+      
+      window.appState.quests.forEach(q => {
+        const itemBox = document.createElement("div");
+        itemBox.className = `flex items-start justify-between bg-cyberField p-3 rounded-xl border border-borderGray hover:border-gray-500 transition relative`;
+        
+        const cardLeft = `
+          <div class="flex items-start space-x-2.5">
+            <input type="checkbox" ${q.completed ? "checked" : ""} onchange="toggleQuestComplete(${q.id}, this.checked)" class="mt-1 w-4 h-4 rounded text-neonGreen bg-cyberCard border-borderGray accent-neonGreen cursor-pointer">
+            <div>
+              <p class="text-xs font-black ${q.completed ? "line-through text-gray-500" : "text-white"}">${q.title}</p>
+              <p class="text-[9px] text-gray-400 mt-0.5 leading-snug">${q.description}</p>
+              <div class="flex space-x-2 mt-1">
+                <span class="text-[8px] bg-neonPurple/20 text-neonPurple px-1 border border-neonPurple/30 font-bold rounded uppercase tracking-wider">+${q.xp} XP</span>
+                <span class="text-[8px] bg-neonOrange/20 text-[#FF9800] px-1 border border-[#FF9800]/30 font-bold rounded uppercase tracking-wider">+${q.gp} GP</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        const deleteAffordance = q.completed ? `
+          <button onclick="removeQuest(${q.id})" class="p-1 bg-red-950 text-rose-500 rounded border border-red-900 hover:bg-rose-500 hover:text-black transition cursor-pointer">
+            <i data-lucide="trash-2" class="w-3 h-3"></i>
+          </button>
+        ` : `
+          <span class="text-[7.5px] font-bold text-gray-500 tracking-widest uppercase py-0.5 px-1 bg-cyberCard rounded border border-borderGray/30">${q.type}</span>
+        `;
+
+        itemBox.innerHTML = cardLeft + deleteAffordance;
+        parent.appendChild(itemBox);
+      });
+      lucide.createIcons();
+    }
+    window.renderQuests = renderQuests;
+
+    function toggleQuestComplete(id, isChecked) {
+      const quest = window.appState.quests.find(q => q.id === id);
+      if (quest) {
+        quest.completed = isChecked;
+        if (isChecked) {
+          window.appState.xpBalance += Math.round(quest.xp * window.appState.xpMultiplier);
+          window.appState.gpBalance += quest.gp;
+          triggerAppAlert(`Quest Accomplished! Bonus +${quest.xp} XP (multiplied) and +${quest.gp} GP gold accumulated.`);
+          
+          // Apply Damage to current boss on quest check completeness!
+          const activeBoss = window.appState.arenas[window.appState.currentArenaIndex];
+          activeBoss.currentHP = Math.max(0, activeBoss.currentHP - (quest.xp * 10));
+          if (activeBoss.currentHP <= 0) {
+            triggerAppAlert(`Victory: ${activeBoss.enemyName} defeated! Level unlocked stage advanced!`);
+          }
+        } else {
+          // subtraction correction ratio balance
+          window.appState.xpBalance = Math.max(0, window.appState.xpBalance - Math.round(quest.xp * window.appState.xpMultiplier));
+          window.appState.gpBalance = Math.max(0, window.appState.gpBalance - quest.gp);
+        }
+        syncUiHUD();
+        renderQuests();
+        updateGameArenaHUD();
+      }
+    }
+    window.toggleQuestComplete = toggleQuestComplete;
+
+    // Toggle expand forge quests
+    function toggleQuestForgeForm() {
+      const form = document.getElementById("quest-forge-form");
+      form.classList.toggle("hidden");
+    }
+    window.toggleQuestForgeForm = toggleQuestForgeForm;
+
+    function forgeNewQuest() {
+      const title = document.getElementById("quest-title").value.trim();
+      const desc = document.getElementById("quest-desc").value.trim();
+      const xpVal = parseInt(document.getElementById("quest-xp").value) || 120;
+      const gpVal = parseInt(document.getElementById("quest-gp").value) || 180;
+
+      if (!title) {
+        triggerAppAlert("Error: Quest title string parameter is empty");
+        return;
+      }
+
+      const freshId = Date.now();
+      window.appState.quests.push({
+        id: freshId,
+        type: "CUSTOM",
+        title: title,
+        description: desc || "Self formulated challenge objectives alignment.",
+        xp: xpVal,
+        gp: gpVal,
+        completed: false
+      });
+
+      triggerAppAlert(`New quest formulated cleanly inside forge alignment: ${title}`);
+      
+      // Reset inputs
+      document.getElementById("quest-title").value = "";
+      document.getElementById("quest-desc").value = "";
+      
+      // Collapse
+      document.getElementById("quest-forge-form").classList.add("hidden");
+      renderQuests();
+    }
+    window.forgeNewQuest = forgeNewQuest;
+
+    function removeQuest(id) {
+      window.appState.quests = window.appState.quests.filter(q => q.id !== id);
+      renderQuests();
+      triggerAppAlert("Habit deleted from verification stack ledger.");
+    }
+    window.removeQuest = removeQuest;
+
+    // ================= COMPUTER VISION FILE SIMULATION CHECK =================
+    function triggerPosturePicker() {
+      document.getElementById("posture-file-picker").click();
+    }
+    window.triggerPosturePicker = triggerPosturePicker;
+
+    function postureFileUploaded() {
+      const picker = document.getElementById("posture-file-picker");
+      const btn = document.getElementById("posture-analyze-btn");
+      const previewArea = document.getElementById("posture-preview-area");
+      const previewImg = document.getElementById("posture-preview-image");
+      
+      if (picker.files && picker.files[0]) {
+        const file = picker.files[0];
+        document.getElementById("posture-filename").innerText = file.name;
+        
+        // Show local preview URL
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewImg.src = e.target.result;
+          previewArea.classList.remove("hidden");
+        }
+        reader.readAsDataURL(file);
+
+        btn.disabled = false;
+        btn.classList.remove("bg-gray-600", "cursor-not-allowed");
+        btn.classList.add("bg-neonGreen", "text-black");
+        triggerAppAlert("Skeletal file loaded! Analysis sensor diagnostics initialized.");
+      }
+    }
+    window.postureFileUploaded = postureFileUploaded;
+
+    // Simulated verification result algorithms
+    function runPostureAnalysis() {
+      triggerAppAlert("Running computer vision curvature calculations...");
+      
+      setTimeout(() => {
+        // 50-50 chances of satisfying curvature threshold
+        const curvesSafe = Math.random() > 0.4;
+        if (curvesSafe) {
+          showOracleDialog("Skeletal Frame curvature metrics satisfy acceptable baseline range! Posture alignment verified. Lumbar curvature: 12.8 degrees. Alignment multipliers locked inside daily registry database.");
+          window.appState.xpBalance += 100;
+          window.appState.trainerLevel += 1;
+          syncUiHUD();
+        } else {
+          showOracleDialog("AI Curved curvature analysis check failed: Lumbar spine angle exceeded standard safety limits. Defenses vulnerable - please stand straight and configure alignment sensors.");
+          window.appState.playerHP = Math.max(10, window.appState.playerHP - 15);
+          syncUiHUD();
+          document.getElementById("posture-warning-banner").classList.remove("hidden");
+        }
+      }, 1800);
+    }
+    window.runPostureAnalysis = runPostureAnalysis;
+
+    function runCognitiveNLPAnalysis() {
+      const input = document.getElementById("mood-diary-text").value.trim();
+      if (!input) {
+        triggerAppAlert("Write a journal paragraph statement of mental focus before launching scan!");
+        return;
+      }
+
+      triggerAppAlert("Processing journal grammar vectors through AI engine...");
+      setTimeout(() => {
+        showOracleDialog("NLP Analysis success! Natural Language processor confirmed highly focused and resilient journaling statements. Oracle code successfully registered inside telemetry database. Streak bonus locked!");
+        window.appState.gpBalance += 150;
+        window.appState.streakCount += 1;
+        document.getElementById("mood-diary-text").value = "";
+        syncUiHUD();
+      }, 1500);
+    }
+    window.runCognitiveNLPAnalysis = runCognitiveNLPAnalysis;
+
+
+    // ================= PHYSIOLOGICAL SESSION & CHRONOS SYSTEM =================
+    function togglePomodoroTicker() {
+      const btn = document.getElementById("pomo-control-btn");
+      if (window.appState.pomoActive) {
+        window.appState.pomoActive = false;
+        clearInterval(window.appState.pomoIntervalId);
+        btn.innerText = "Start Focus Session";
+        btn.classList.remove("bg-red-600");
+        btn.classList.add("bg-neonPurple");
+      } else {
+        window.appState.pomoActive = true;
+        btn.innerText = "Freeze Session Timer";
+        btn.classList.remove("bg-neonPurple");
+        btn.classList.add("bg-red-600");
+        
+        window.appState.pomoIntervalId = setInterval(() => {
+          if (window.appState.pomoSecondsLeft > 0) {
+            window.appState.pomoSecondsLeft--;
+            if (window.appState.pomoMode === "focus") {
+              window.appState.totalFocusSeconds++;
+              syncUiHUD();
+            }
+            renderPomoTime();
+          } else {
+            // cycle done
+            window.appState.pomoActive = false;
+            clearInterval(window.appState.pomoIntervalId);
+            const next = window.appState.pomoMode === "focus" ? "rest" : "focus";
+            window.appState.pomoMode = next;
+            window.appState.pomoSecondsLeft = next === "focus" ? 25 * 60 : 5 * 60;
+            renderPomoTime();
+            btn.innerText = "Start Focus Session";
+            btn.classList.add("bg-neonPurple");
+            showOracleDialog(`Session Finished! Interlocking system shifted timer template to ${next.toUpperCase()} interval.`);
+          }
+        }, 1000);
+      }
+    }
+    window.togglePomodoroTicker = togglePomodoroTicker;
+
+    function renderPomoTime() {
+      const minutes = Math.floor(window.appState.pomoSecondsLeft / 60);
+      const seconds = window.appState.pomoSecondsLeft % 60;
+      document.getElementById("pomo-timer-ticker").innerText = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    }
+
+    function changePomoMode(mode) {
+      window.appState.pomoActive = false;
+      clearInterval(window.appState.pomoIntervalId);
+      window.appState.pomoMode = mode;
+      window.appState.pomoSecondsLeft = mode === "focus" ? 25 * 60 : 5 * 60;
+      renderPomoTime();
+      
+      const btn = document.getElementById("pomo-control-btn");
+      btn.innerText = "Start Focus Session";
+      btn.classList.remove("bg-red-600");
+      btn.classList.add("bg-neonPurple");
+      triggerAppAlert(`Timer switched to ${mode.toUpperCase()} alignment schema.`);
+    }
+    window.changePomoMode = changePomoMode;
+
+
+    // ================= BIOMETRIC WORKOUT LIVE SCANNING =================
+    function toggleFitnessWorkout() {
+      const btn = document.getElementById("fitness-workout-btn");
+      const tag = document.getElementById("biometric-tag");
+      const statusTitle = document.getElementById("fitness-status-h");
+
+      if (window.appState.fitnessActive) {
+        window.appState.fitnessActive = false;
+        clearInterval(window.appState.fitnessIntervalId);
+        btn.innerText = "Initialize Biometric Scanning";
+        btn.style.backgroundColor = "#00E676";
+        btn.style.color = "black";
+        tag.innerText = "OFFLINE";
+        tag.className = "text-[8px] bg-slate-800 text-slate-400 px-1 border border-slate-700 font-bold rounded uppercase";
+        statusTitle.innerText = "📴 STANDBY PROTOCOLS";
+        document.getElementById("workout-pulse").innerText = "--";
+        document.getElementById("workout-watts").innerText = "--";
+      } else {
+        window.appState.fitnessActive = true;
+        btn.innerText = "De-initialize Active Sensors";
+        btn.style.backgroundColor = "#ff3333";
+        btn.style.color = "white";
+        tag.innerText = "LIVE HARVEST";
+        tag.className = "text-[8px] bg-emerald-500/20 text-emerald-400 px-1 border border-emerald-500/30 font-bold rounded uppercase animate-pulse";
+        statusTitle.innerText = "🧬 BIOMETRIC HARVEST ACTIVE";
+        
+        window.appState.fitnessIntervalId = setInterval(() => {
+          window.appState.fitnessSeconds++;
+          const liveHR = Math.floor(Math.random() * 22) + 120; // 120-141 range
+          const liveW = Math.floor(Math.random() * 52) + 165;  // 165-216 range
+          
+          document.getElementById("workout-pulse").innerText = liveHR;
+          document.getElementById("workout-watts").innerText = liveW;
+
+          // Reward small amounts of XP/Gold on training intervals
+          if (window.appState.fitnessSeconds % 10 === 0) {
+            window.appState.xpBalance += 5;
+            window.appState.gpBalance += 8;
+            syncUiHUD();
+          }
+        }, 1000);
+        triggerAppAlert("Live bio-analytics scanning sensors synchronized with cardiac outputs!");
+      }
+    }
+    window.toggleFitnessWorkout = toggleFitnessWorkout;
+
+
+    // ================= 2D ARCADE COMBAT SIM MODULES =================
+    let canvas, ctx, animationFrameId;
+    let gameVars = {
+      playerX: 200,
+      playerY: 210,
+      projectiles: [],
+      bossClass: { hp: 100, max: 100 },
+      isGameRunning: false
+    };
+
+    function initCanvasGame() {
+      canvas = document.getElementById("game-canvas");
+      ctx = canvas.getContext("2d");
+      
+      // Base draw elements initial status
+      drawArcadeBoard();
+    }
+
+    function drawArcadeBoard() {
+      ctx.fillStyle = "#030814";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw gridlines
+      ctx.strokeStyle = "#1b2435";
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i < canvas.width; i += 40) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
+      }
+      for (let j = 0; j < canvas.height; j += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, j);
+        ctx.lineTo(canvas.width, j);
+        ctx.stroke();
+      }
+
+      // Draw active Boss placeholder structure
+      const currentBoss = window.appState.arenas[window.appState.currentArenaIndex];
+      ctx.fillStyle = currentBoss.colorAccent;
+      ctx.beginPath();
+      // Draw space capsule style boss
+      ctx.arc(200, 50, 25, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Boss text and accent lines
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 9px 'JetBrains Mono'";
+      ctx.textAlign = "center";
+      ctx.fillText(currentBoss.enemyName, 200, 100);
+
+      // Ship placeholder
+      ctx.fillStyle = "#6BFB9A";
+      ctx.beginPath();
+      ctx.moveTo(gameVars.playerX, gameVars.playerY);
+      ctx.lineTo(gameVars.playerX - 10, gameVars.playerY + 15);
+      ctx.lineTo(gameVars.playerX + 10, gameVars.playerY + 15);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function startGameSimulation() {
+      document.getElementById("game-intro-screen").classList.add("hidden");
+      document.getElementById("game-won-screen").classList.add("hidden");
+      document.getElementById("game-lost-screen").classList.add("hidden");
+      
+      // Core stats reset
+      window.appState.playerHP = 100;
+      const activeBoss = window.appState.arenas[window.appState.currentArenaIndex];
+      activeBoss.currentHP = activeBoss.maxHP / 2; // scale current HP to make it highly beatable in emulator quick interactions
+
+      gameVars.isGameRunning = true;
+      gameVars.projectiles = [];
+      gameVars.bossClass.hp = 100;
+      gameVars.bossClass.max = 100;
+      syncUiHUD();
+      updateGameArenaHUD();
+
+      // Launch physical game ticks loop
+      runGameEngineTicks();
+      triggerAppAlert("Survival Arcade Battle Simulation systems active!");
+    }
+    window.startGameSimulation = startGameSimulation;
+
+    function resetGameSimulation() {
+      document.getElementById("game-won-screen").classList.add("hidden");
+      document.getElementById("game-lost-screen").classList.add("hidden");
+      document.getElementById("game-intro-screen").classList.remove("hidden");
+      gameVars.isGameRunning = false;
+      cancelAnimationFrame(animationFrameId);
+      initCanvasGame();
+    }
+    window.resetGameSimulation = resetGameSimulation;
+
+    // Moving bindings bounds
+    function sliderPlayerInput(val) {
+      if (!canvas) return;
+      // Map percentage to actual width constraints
+      const percentage = parseFloat(val) / 100;
+      gameVars.playerX = percentage * (canvas.width - 30) + 15;
+      if (!gameVars.isGameRunning) {
+        drawArcadeBoard();
+      }
+    }
+    window.sliderPlayerInput = sliderPlayerInput;
+
+    function movePlayerLeft() {
+      const slider = document.getElementById("player-slider");
+      let cur = parseInt(slider.value) - 10;
+      slider.value = Math.max(5, cur);
+      sliderPlayerInput(slider.value);
+    }
+    window.movePlayerLeft = movePlayerLeft;
+
+    function movePlayerRight() {
+      const slider = document.getElementById("player-slider");
+      let cur = parseInt(slider.value) + 10;
+      slider.value = Math.min(95, cur);
+      sliderPlayerInput(slider.value);
+    }
+    window.movePlayerRight = movePlayerRight;
+
+    function fireLaserProjectile() {
+      if (!gameVars.isGameRunning) return;
+      
+      gameVars.projectiles.push({
+        x: gameVars.playerX,
+        y: gameVars.playerY,
+        dy: -4,
+        isPlayer: true
+      });
+    }
+    window.fireLaserProjectile = fireLaserProjectile;
+
+    function runGameEngineTicks() {
+      if (!gameVars.isGameRunning) return;
+
+      // Update engine locations
+      ctx.fillStyle = "#030814";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw aesthetic environment stars elements
+      ctx.fillStyle = "#ffffff";
+      for (let star = 0; star < 10; star++) {
+        let starX = (Math.sin(star * Date.now() / 1000) + 1) / 2 * canvas.width;
+        let starY = (Math.cos(star * Date.now() / 800) + 1) / 2 * canvas.height;
+        ctx.fillRect(starX, starY, 1, 1);
+      }
+
+      // Draw Boss enemy
+      const activeBoss = window.appState.arenas[window.appState.currentArenaIndex];
+      ctx.fillStyle = activeBoss.colorAccent;
+      ctx.beginPath();
+      let bossXOffset = Math.sin(Date.now() / 600) * 80 + 200; // hover animations
+      ctx.arc(bossXOffset, 45, 18, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Render health bar above boss
+      ctx.fillStyle = "#2D3449";
+      ctx.fillRect(bossXOffset - 25, 18, 50, 4);
+      ctx.fillStyle = activeBoss.colorAccent;
+      ctx.fillRect(bossXOffset - 25, 18, 50 * (gameVars.bossClass.hp / gameVars.bossClass.max), 4);
+
+      // Random Boss Projectile Spawning bounds
+      if (Math.random() < 0.05) {
+        gameVars.projectiles.push({
+          x: bossXOffset,
+          y: 45,
+          dy: 2.5,
+          isPlayer: false
+        });
+      }
+
+      // Draw Ship
+      ctx.fillStyle = "#6BFB9A";
+      ctx.beginPath();
+      ctx.moveTo(gameVars.playerX, gameVars.playerY);
+      ctx.lineTo(gameVars.playerX - 10, gameVars.playerY + 14);
+      ctx.lineTo(gameVars.playerX + 10, gameVars.playerY + 14);
+      ctx.closePath();
+      ctx.fill();
+
+      // Projectiles Loops update
+      for (let i = gameVars.projectiles.length - 1; i >= 0; i--) {
+        let p = gameVars.projectiles[i];
+        p.y += p.dy;
+
+        // Draw laser rocket
+        ctx.fillStyle = p.isPlayer ? "#6BFB9A" : "#ff3333";
+        ctx.fillRect(p.x - 1.5, p.y - 4, 3, 8);
+
+        // Collision logic inside the bounds
+        if (p.isPlayer) {
+          // Check collision with Boss
+          let dx = p.x - bossXOffset;
+          let dy = p.y - 45;
+          let dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 20) {
+            gameVars.projectiles.splice(i, 1);
+            gameVars.bossClass.hp = Math.max(0, gameVars.bossClass.hp - 10);
+            
+            // Apply damage to primary state
+            activeBoss.currentHP = Math.max(0, activeBoss.currentHP - 450);
+            updateGameArenaHUD();
+
+            if (gameVars.bossClass.hp <= 0) {
+              // Game Won protocol
+              gameVars.isGameRunning = false;
+              document.getElementById("game-won-screen").classList.remove("hidden");
+              window.appState.gpBalance += 600;
+              window.appState.xpBalance += 450;
+              window.appState.streakCount += 1;
+              syncUiHUD();
+            }
+            continue;
+          }
+        } else {
+          // Check collision with Player Space craft
+          let dx = p.x - gameVars.playerX;
+          let dy = p.y - gameVars.playerY;
+          let dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 15) {
+            gameVars.projectiles.splice(i, 1);
+            window.appState.playerHP = Math.max(0, window.appState.playerHP - 15);
+            syncUiHUD();
+
+            if (window.appState.playerHP <= 0) {
+              // Game lost
+              gameVars.isGameRunning = false;
+              document.getElementById("game-lost-screen").classList.remove("hidden");
+              window.appState.playerHP = 100;
+              syncUiHUD();
+            }
+            continue;
+          }
+        }
+
+        // Clean out of bounds projects
+        if (p.y < 0 || p.y > canvas.height) {
+          gameVars.projectiles.splice(i, 1);
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(runGameEngineTicks);
+    }
+
+
+    // ================= CYBER SHOP ROOM INVENTORY PACK =================
+    function renderShopCatalog() {
+      const parent = document.getElementById("shop-items-box");
+      parent.innerHTML = "";
+      
+      const filtered = window.appState.shopItems.filter(item => item.type === window.appState.currentShopFilter);
+      
+      filtered.forEach(item => {
+        const itemCard = document.createElement("div");
+        itemCard.className = `flex items-center justify-between bg-cyberField p-3 rounded-xl border border-borderGray hover:border-gray-500 transition`;
+        
+        itemCard.innerHTML = `
+          <div>
+            <span class="text-[7.5px] font-extrabold uppercase px-1 py-0.5 rounded border leading-none bg-cyberCard" style="color: ${item.color}; border-color: ${item.color}33;">${item.type}</span>
+            <p class="text-xs font-black text-white mt-1.5 flex items-center gap-1">
+              ${item.name} 
+              <span class="text-[9px] text-[#FF9800]">(${item.quantity} owned)</span>
+            </p>
+            <p class="text-[9px] text-gray-400 mt-0.5 max-w-xs leading-normal">${item.desc}</p>
+          </div>
+          <button onclick="purchaseShopItem(${item.id})" class="px-3 py-2 bg-neonOrange text-black font-extrabold text-[10px] uppercase rounded-xl border border-neonOrange flex items-center space-x-0.5 cursor-pointer hover:bg-opacity-95 transition">
+            <span>${item.cost}</span>
+            <i data-lucide="coins" class="w-3.5 h-3.5 ml-0.5"></i>
+          </button>
+        `;
+        parent.appendChild(itemCard);
+      });
+      lucide.createIcons();
+    }
+    window.renderShopCatalog = renderShopCatalog;
+
+    function shopFilterItems(category) {
+      window.appState.currentShopFilter = category;
+      
+      ["consumable", "gear", "special"].forEach(c => {
+        const btn = document.getElementById(`shop-btn-${c}`);
+        if (c === category.toLowerCase()) {
+          btn.className = "px-3 py-1 bg-neonGreen text-black font-extrabold rounded-lg text-[10px] uppercase border border-neonGreen shadow-md";
+        } else {
+          btn.className = "px-3 py-1 bg-cyberCard border border-borderGray text-gray-400 rounded-lg text-[10px] uppercase font-bold";
+        }
+      });
+      
+      renderShopCatalog();
+    }
+    window.shopFilterItems = shopFilterItems;
+
+    function purchaseShopItem(id) {
+      const item = window.appState.shopItems.find(i => i.id === id);
+      if (item) {
+        if (window.appState.gpBalance >= item.cost) {
+          window.appState.gpBalance -= item.cost;
+          item.quantity += 1;
+          
+          if (item.id === 1) {
+            // Restore player hp instantly
+            window.appState.playerHP = Math.min(100, window.appState.playerHP + 35);
+            triggerAppAlert("Hp Pack used! Vitality restored by 35 points.");
+          } else {
+            triggerAppAlert(`Purchased ${item.name} successfully! Inventory inventory updated.`);
+          }
+          
+          syncUiHUD();
+          renderShopCatalog();
+        } else {
+          triggerAppAlert("Insufficient gold coins balance! Complete more objectives first.");
+        }
+      }
+    }
+    window.purchaseShopItem = purchaseShopItem;
+
+  </script>
+
+</body>
+</html>
