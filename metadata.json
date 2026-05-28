@@ -1,0 +1,6 @@
+{
+  "name": "Stitch RPG",
+  "description": "A gamified productivity-fitness habits trainer RPG featuring active boss minigames, customizable quest forges, and AI double verification protocols.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
